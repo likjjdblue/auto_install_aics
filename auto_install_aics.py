@@ -109,7 +109,7 @@ def __installPexpect():
     try:
         import pexpect
     except:
-        subprocess.call('rpm -Uvh install_package/pexpect/python2-pip-8.1.2-8.el7.noarch.rpm',
+        subprocess.call('rpm -Uvh install_package/pexpect/*.rpm',
                         shell=True)
         subprocess.call('pip install install_package/pexpect/ptyprocess-0.6.0.tar.gz',
                         shell=True)
