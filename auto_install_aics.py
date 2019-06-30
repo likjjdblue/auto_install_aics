@@ -16,7 +16,6 @@ from collections import defaultdict
 from commands import getoutput
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from ESScript  import ESScript
-import pexpect
 import hashlib
 
 EnableLocalYum=False   ####是否开启本地YUM源开关，如果开启就跳过对Internet的检测  2018-02-26 新增   ####
@@ -666,66 +665,66 @@ def installMariadb():
             exit(1)
         print (TextColorGreen+'/etc/my.cnf 文件冲突检测：通过'+TextColorWhite)
 
+    TmpResult=checkPortState('127.0.0.1',3306)
+    if TmpResult['RetCode']==0:
+        print (TextColorRed+'检测到 3306 端口处于监听状态，安装失败，程序退出'+TextColorWhite)
+        AppInstalledState['mariadb']='not ok'
+        exit(1)
+    print (TextColorGreen+'3306 端口检测：通过'+TextColorWhite)
+
+    if path.isdir('/usr/local/mysql') or path.isdir('/var/lib/mysql'):
+        print (TextColorRed+'/usr/local/mysql 或 /var/lib/mysql 目录已经存在 ，安装失败，程序退出'+TextColorWhite)
+        AppInstalledState['mariadb']='not ok'
+        exit(1)
+    print (TextColorGreen+'/usr/local/mysql 及 /var/lib/mysql 目录冲突检测： 通过')
+
+    if subprocess.call('cd install_package/mariadb_archive;sh install.sh',shell=True):
+        print (TextColorRed+'MariaDB 安装失败，程序退出'+TextColorWhite)
+        AppInstalledState['mariadb']='not ok'
+        exit(1)
+
+    print (TextColorGreen+'MariaDB 安装成功!'+TextColorWhite)
+    print (TextColorWhite+'正在启动及配置MariaDB,请稍候.....'+TextColorWhite)
+    subprocess.call('firewall-cmd --zone=public --add-port=3306/tcp --permanent',shell=True)
+    subprocess.call('firewall-cmd --reload',shell=True)
+    subprocess.call('systemctl start mysql',shell=True)
+    sleep(3)
+
+    isRunningFlag=False
+    for i in range(10):
         TmpResult=checkPortState('127.0.0.1',3306)
         if TmpResult['RetCode']==0:
-            print (TextColorRed+'检测到 3306 端口处于监听状态，安装失败，程序退出'+TextColorWhite)
-            AppInstalledState['mariadb']='not ok'
-            exit(1)
-        print (TextColorGreen+'3306 端口检测：通过'+TextColorWhite)
+            print (TextColorWhite+'MariaDB  启动成功!'+TextColorWhite)
+            isRunningFlag=True
+            break
+        print (TextColorWhite+'等待 MariaDB 启动.....'+TextColorWhite)
+        sleep((i+1)*5)
 
-        if path.isdir('/usr/local/mysql') or path.isdir('/var/lib/mysql'):
-            print (TextColorRed+'/usr/local/mysql 或 /var/lib/mysql 目录已经存在 ，安装失败，程序退出'+TextColorWhite)
-            AppInstalledState['mariadb']='not ok'
-            exit(1)
-        print (TextColorGreen+'/usr/local/mysql 及 /var/lib/mysql 目录冲突检测： 通过')
+    if not isRunningFlag:
+        print (TextColorRed+'MariaDB 无法启动，程序退出!'+TextColorWhite)
+        AppInstalledState['mariadb']='not ok'
+        exit(1)
 
-        if subprocess.call('cd install_package/mariadb_archive;sh install.sh',shell=True):
-            print (TextColorRed+'MariaDB 安装失败，程序退出'+TextColorWhite)
-            AppInstalledState['mariadb']='not ok'
-            exit(1)
-
-        print (TextColorGreen+'MariaDB 安装成功!'+TextColorWhite)
-        print (TextColorWhite+'正在启动及配置MariaDB,请稍候.....'+TextColorWhite)
-        subprocess.call('firewall-cmd --zone=public --add-port=3306/tcp --permanent',shell=True)
-        subprocess.call('firewall-cmd --reload',shell=True)
-        subprocess.call('systemctl start mysql',shell=True)
-        sleep(3)
-
-        isRunningFlag=False
-        for i in range(10):
-            TmpResult=checkPortState('127.0.0.1',3306)
-            if TmpResult['RetCode']==0:
-                print (TextColorWhite+'MariaDB  启动成功!'+TextColorWhite)
-                isRunningFlag=True
-                break
-            print (TextColorWhite+'等待 MariaDB 启动.....'+TextColorWhite)
-            sleep((i+1)*5)
-
-        if not isRunningFlag:
-            print (TextColorRed+'MariaDB 无法启动，程序退出!'+TextColorWhite)
-            AppInstalledState['mariadb']='not ok'
-            exit(1)
-
-        ###  创建账号及database ###
-        try:
-            import mysql.connector
-            ConnObj=mysql.connector.connect(host='127.0.0.1',port=3306,user='root',password='',connection_timeout=3)
-            TmpCursor=ConnObj.cursor()
-            TmpCursor.execute("create database aicsdb_demo;")
-            TmpCursor.execute("grant all privileges on *.* to 'aics'@'%' identified by 'trs@admin';")
-            TmpCursor.execute("grant all privileges on *.* to 'aics'@'127.0.0.1' identified by 'trs@admin';")
-            TmpCursor.execute("grant all privileges on *.* to 'aics'@'localhost' identified by 'trs@admin';")
-            print (TextColorGreen+'成功创建 Database 及 连接账号'+TextColorWhite)
-        except Exception as e :
-            print (TextColorRed+'无法连接 Mysql 创建Database及账号,程序退出.'+TextColorWhite)
-            AppInstalledState['mariadb']='not ok'
-            exit(1)
+    ###  创建账号及database ###
+    try:
+        import mysql.connector
+        ConnObj=mysql.connector.connect(host='127.0.0.1',port=3306,user='root',password='',connection_timeout=3)
+        TmpCursor=ConnObj.cursor()
+        TmpCursor.execute("create database aicsdb_demo;")
+        TmpCursor.execute("grant all privileges on *.* to 'aics'@'%' identified by 'trs@admin';")
+        TmpCursor.execute("grant all privileges on *.* to 'aics'@'127.0.0.1' identified by 'trs@admin';")
+        TmpCursor.execute("grant all privileges on *.* to 'aics'@'localhost' identified by 'trs@admin';")
+        print (TextColorGreen+'成功创建 Database 及 连接账号'+TextColorWhite)
+    except Exception as e :
+        print (TextColorRed+'无法连接 Mysql 创建Database及账号,程序退出.'+TextColorWhite)
+        AppInstalledState['mariadb']='not ok'
+        exit(1)
 
 
-        if subprocess.call('which mysql',shell=True):
-            subprocess.call("echo 'export PATH=${PATH}:/usr/local/mysql/bin'>>/etc/profile",
+    if subprocess.call('which mysql',shell=True):
+        subprocess.call("echo 'export PATH=${PATH}:/usr/local/mysql/bin'>>/etc/profile",
                             shell=True)
-        AppInstalledState['mariadb']='ok'
+    AppInstalledState['mariadb']='ok'
 
 
 
@@ -796,6 +795,7 @@ def installOpenCV():
 
 def installAnaconda():
     def __installViaExpectScript():
+        import pexpect
         outfile=open(r'result.log',mode='w')
         child=pexpect.spawn('sh install_package/python_archive/Anaconda3-5.2.0-Linux-x86_64.sh',timeout=None,logfile=outfile)
         child.expect('.*>>>.*')
