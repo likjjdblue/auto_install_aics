@@ -854,7 +854,7 @@ def installAnaconda():
     InternetState=checkInternetConnection()
     if InternetState['RetCode']!=0:
        print (TextColorRed+InternetState['Description']+TextColorWhite)
-       print (TextColorRed+'OpenCV安装失败，程序退出。'+TextColorWhite)
+       print (TextColorRed+'Anaconda Python安装失败，程序退出。'+TextColorWhite)
        AppInstalledState['python3']='not ok'
        exit(1)
     print (TextColorGreen+'网络检测畅通,安装继续。'+TextColorWhite)
@@ -880,6 +880,10 @@ def installAnaconda():
         print (TextColorRed+'安装 poppler 失败，程序退出'+TextColorWhite)
         exit(1)
 
+    if subprocess.call('yum install gcc -y',shell=True):
+        print (TextColorRed+'安装gcc 失败,无法安装 Pillow,程序退出.'+TextColorWhite)
+        AppInstalledState['python3']='not ok'
+        exit(1)
     if subprocess.call('cd install_package/python_archive/Pillow-master;/root/anaconda3/bin/python setup.py install',shell=True):
         print (TextColorRed+'安装 Pillow 失败，程序退出'+TextColorWhite)
         exit(1)
