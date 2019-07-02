@@ -678,6 +678,12 @@ def installMariadb():
         exit(1)
     print (TextColorGreen+'/usr/local/mysql 及 /var/lib/mysql 目录冲突检测： 通过')
 
+    if subprocess.call('yum install libaio* -y',shell=True):
+        print (TextColorRed+'无法安装 libaio 组件，安装MariaDB 失败，程序退出'+TextColorWhite)
+        AppInstalledState['mariadb']='not ok'
+        exit(1)
+    print (TextColorWhite+'成功安装 libaio组件，程序继续'+TextColorWhite)
+
     if subprocess.call('cd install_package/mariadb_archive;sh install.sh',shell=True):
         print (TextColorRed+'MariaDB 安装失败，程序退出'+TextColorWhite)
         AppInstalledState['mariadb']='not ok'
