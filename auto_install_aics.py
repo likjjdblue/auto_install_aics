@@ -872,8 +872,8 @@ def installAnaconda():
     #### 交互安装Anaconda  ###
     __installViaExpectScript()
     subprocess.call('source /root/.bashrc',shell=True)
-    subprocess.call('mv /root/anaconda3/lib/python3.6/site-packages  /root/anaconda3/lib/python3.6/site-packages.backup',shell=True)
-    subprocess.call('tar -C /root/anaconda3/lib/python3.6 -xvzf install_package/python_archive/site-packages.tar.gz',shell=True)
+#    subprocess.call('mv /root/anaconda3/lib/python3.6/site-packages  /root/anaconda3/lib/python3.6/site-packages.backup',shell=True)
+#    subprocess.call('tar -C /root/anaconda3/lib/python3.6 -xvzf install_package/python_archive/site-packages.tar.gz',shell=True)
     print (TextColorGreen+'成功安装Anaconda python'+TextColorWhite)
     AppInstalledState['python3']='ok'
 
