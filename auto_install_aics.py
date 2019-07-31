@@ -417,6 +417,8 @@ def installElasticsearch():
     tmpresult=sendHttpRequest(host='127.0.0.1',port=9200,url='/fulltext',
                    method='PUT',header={'Content-Type':'application/json'},body=ESScript.DictB)
     print (TextColorGreen+'分词器设置完毕。'+TextColorWhite)
+    subprocess.call('firewall-cmd --zone=public --add-port=9200/tcp --permanent',shell=True)
+    subprocess.call('firewall-cmd --zone=public --add-port=9300/tcp --permanent',shell=True)
     print (TextColorGreen+'Elasticsearch  已经成功安装并配置。'+TextColorWhite)
     AppInstalledState['elasticsearch']='ok'
 
