@@ -111,9 +111,9 @@ def __installPexpect():
     except:
         subprocess.call('rpm -Uvh install_package/pexpect/*.rpm',
                         shell=True)
-        subprocess.call('pip install install_package/pexpect/ptyprocess-0.6.0.tar.gz',
+        subprocess.call('/usr/bin/pip install install_package/pexpect/ptyprocess-0.6.0.tar.gz',
                         shell=True)
-        subprocess.call('pip install install_package/pexpect/pexpect-4.7.0.tar.gz',
+        subprocess.call('/usr/bin/pip install install_package/pexpect/pexpect-4.7.0.tar.gz',
                         shell=True)
 
           
