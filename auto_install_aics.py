@@ -996,6 +996,127 @@ def installNeo4j():
     AppInstalledState['neo4j']='ok'
 
 
+def installCuda():
+    def __installViaExpectScript():
+        import pexpect
+        outfile=open(r'result_cuda.log',mode='w')
+        child=pexpect.spawn('sh install_package/cuda_archive/cuda_9.0.176_384.81_linux.run',timeout=None,logfile=outfile)
+
+        while True:
+            print ('INFO: READ THE LICENCE ITEM')
+            i=child.expect(['.*--More--.*','.*accept/decline.*','.*\r\n'])
+
+            if i==0:
+                child.sendline('')
+                continue
+            elif i==1:
+                print ('ACCEPT LICIENCE')
+                child.sendline('accept')
+                break
+            else:
+                continue
+
+
+       ###  Accelerated Graphics Driver   ###
+        while True:
+            i=child.expect(['.*\(y\)es.*','.*\r\n'])
+            if i==0:
+                print ('CONTINUE AS no')
+                child.sendline('no')
+                break
+            continue
+
+        ####  CUDA 9.0 Toolkit    ####
+        while True:
+            i=child.expect('.*\(y\)es.*')
+            if i==0:
+                print ('CONTINUE AS yes')
+                child.sendline('yes')
+                break
+            continue
+
+        #### Enter Toolkit Location   ####
+        while True:
+            i=child.expect('.*default.*')
+            if i==0:
+                print ('CONTINUE AS yes')
+                child.sendline('')
+                break
+            continue
+
+        ####   symbolic link  ###
+        while True:
+            i=child.expect('.*\(y\)es.*')
+            if i==0:
+                print ('CONTINUE AS yes')
+                child.sendline('yes')
+                break
+            continue
+
+        ###   CUDA 9.0 Samples   ###
+        while True:
+            i=child.expect('.*\(y\)es.*')
+            if i==0:
+                print ('CONTINUE AS no')
+                child.sendline('no')
+                break
+            continue
+
+
+    if not subprocess.call('/usr/local/cuda-9.0/bin/nvcc  --version',shell=True):
+        print (TextColorWhite+'Cuda 9.0 已经安装，无需重复安装'+TextColorWhite)
+        return
+
+    print (TextColorWhite+'即将安装 Cuda  ，请稍候....'+TextColorWhite)
+    InternetState=checkInternetConnection()
+    if InternetState['RetCode']!=0:
+       print (TextColorRed+InternetState['Description']+TextColorWhite)
+       print (TextColorRed+'Cuda  安装失败，程序退出。'+TextColorWhite)
+       AppInstalledState['cuda']='not ok'
+       exit(1)
+    print (TextColorGreen+'网络检测畅通,安装继续。'+TextColorWhite)
+
+    if subprocess.call('yum install gcc perl  kernel-devel*  kernel-headers* -y',shell=True):
+        print (TextColorRed+'安装 Cuda 依赖失败，程序退出'+TextColorWhite)
+        exit(1)
+
+    #### 交互安装 Cuda  ###
+    __installViaExpectScript()
+
+    if  subprocess.call('/usr/local/cuda-9.0/bin/nvcc  --version',shell=True):
+        print (TextColorRed+'Cuda 安装失败，程序退出'+TextColorWhite)
+        AppInstalledState['cuda']='not ok'
+        exit(1)
+
+
+    with open(r'/etc/profile',mode='a') as f:
+        f.write('\n')
+        f.write('export  PATH=${PATH}:/usr/local/cuda-9.0/bin'+'\n')
+        f.write('export  CUDA_HOME=/usr/local/cuda-9.0'+'\n')
+        f.write('export  LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH'+'\n')
+
+    with open(r'/etc/ld.so.conf.d/cuda.conf',mode='w') as f:
+        f.write('/usr/local/cuda/lib64')
+
+    print (TextColorGreen+'Cuda   安装成功'+TextColorWhite)
+    AppInstalledState['cuda']='ok'
+
+
+def installCudnn():
+    print (TextColorWhite+'即将安装 Cudnn ，请稍候....'+TextColorWhite)
+    subprocess.call('tar -xvzf install_package/cuda_archive/cudnn-9.0-linux-x64-v7.tgz -C install_package/cuda_archive',
+                    shell=True)
+    subprocess.call('cp install_package/cuda_archive/cuda/include/cudnn.h /usr/local/cuda/include',
+                    shell=True)
+    subprocess.call('cp  install_package/cuda_archive/cuda/lib64/libcudnn* /usr/local/cuda/lib64',
+                    shell=True)
+    subprocess.call('chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*',
+                    shell=True)
+    subprocess.call('rm -f  /usr/local/cuda-9.0/lib64/libcudnn.so.7',shell=True)
+    subprocess.call('ln -s /usr/local/cuda-9.0/lib64/libcudnn.so.7.0.5   /usr/local/cuda-9.0/lib64/libcudnn.so.7',
+                    shell=True)
+
+    print (TextColorGreen+'Cudnn  安装完毕'+TextColorWhite)
 
 
 
